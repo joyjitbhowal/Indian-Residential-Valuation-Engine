@@ -1,0 +1,395 @@
+openapi: 3.0.3
+info:
+  title: House Price Prediction API
+  description: |
+    ML-powered REST API for predicting Indian residential property values.
+    Uses a 3-model ensemble (XGBoost, LightGBM, Random Forest) with
+    multi-modal scoring and confidence-scored price ranges.
+  version: 1.0.0
+  contact:
+    name: Project Team
+    email: support@example.com
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+paths:
+  /:
+    get:
+      summary: Landing page
+      description: Returns the HTML landing page
+      tags: [Pages]
+      responses:
+        '200':
+          description: HTML page
+
+  /predict:
+    get:
+      summary: Prediction form page
+      description: Returns the HTML prediction form
+      tags: [Pages]
+      responses:
+        '200':
+          description: HTML form page
+
+    post:
+      summary: Predict house price
+      description: |
+        Accepts property features and returns predicted price range
+        with ensemble prediction and confidence level.
+      tags: [Prediction]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                features:
+                  $ref: '#/components/schemas/PropertyFeatures'
+            example:
+              features:
+                State: Maharashtra
+                City: Mumbai
+                Property_Type: Apartment
+                BHK: 3
+                Size_in_SqFt: 1200
+                Furnished_Status: Semi-furnished
+                Floor_No: 5
+                Total_Floors: 15
+                Age_of_Property: 10
+                Year_Built: 2015
+                Nearby_Schools: 5
+                Nearby_Hospitals: 3
+                Public_Transport_Accessibility: High
+                Parking_Space: "Yes"
+                Security: "Yes"
+                Facing: East
+                Owner_Type: Owner
+                Availability_Status: Ready_to_Move
+                Price_per_SqFt: 0.15
+      responses:
+        '200':
+          description: Prediction result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Models not loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      summary: Health check
+      description: Returns system health status and loaded models
+      tags: [System]
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /models:
+    get:
+      summary: List available models
+      description: Returns list of loaded ML models
+      tags: [System]
+      responses:
+        '200':
+          description: Model list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsResponse'
+
+  /api/comparison:
+    get:
+      summary: Model comparison metrics
+      description: Returns test metrics for all trained models
+      tags: [API]
+      responses:
+        '200':
+          description: Comparison data
+
+  /api/scores:
+    get:
+      summary: Multi-modal composite scores
+      description: Returns composite scores for each model
+      tags: [API]
+      responses:
+        '200':
+          description: Score data
+
+  /api/rate:
+    get:
+      summary: City price rate lookup
+      description: Returns median price per sqft for a city
+      tags: [API]
+      parameters:
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          example: Maharashtra
+        - name: city
+          in: query
+          required: true
+          schema:
+            type: string
+          example: Mumbai
+      responses:
+        '200':
+          description: Rate data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Price_per_SqFt:
+                    type: number
+                  state:
+                    type: string
+                  city:
+                    type: string
+        '400':
+          description: Missing parameters
+
+  /api/states:
+    get:
+      summary: List Indian states
+      description: Returns list of all states in the dataset
+      tags: [API]
+      responses:
+        '200':
+          description: State list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  states:
+                    type: array
+                    items:
+                      type: string
+                  count:
+                    type: integer
+
+  /api/cities:
+    get:
+      summary: List cities by state
+      description: Returns cities for a given state
+      tags: [API]
+      parameters:
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          example: Maharashtra
+      responses:
+        '200':
+          description: City list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cities:
+                    type: array
+                    items:
+                      type: string
+                  state:
+                    type: string
+                  count:
+                    type: integer
+        '400':
+          description: Missing state parameter
+        '404':
+          description: State not found
+
+components:
+  schemas:
+    PropertyFeatures:
+      type: object
+      required:
+        - State
+        - City
+        - Property_Type
+        - BHK
+        - Size_in_SqFt
+        - Furnished_Status
+        - Floor_No
+        - Total_Floors
+        - Age_of_Property
+        - Year_Built
+        - Nearby_Schools
+        - Nearby_Hospitals
+        - Public_Transport_Accessibility
+        - Parking_Space
+        - Security
+        - Facing
+        - Owner_Type
+        - Availability_Status
+      properties:
+        State:
+          type: string
+          description: Indian state name
+        City:
+          type: string
+          description: City name
+        Property_Type:
+          type: string
+          enum: [Apartment, Villa, Independent House]
+        BHK:
+          type: integer
+          minimum: 1
+          maximum: 10
+        Size_in_SqFt:
+          type: integer
+          minimum: 50
+          maximum: 100000
+        Furnished_Status:
+          type: string
+          enum: [Furnished, Semi-furnished, Unfurnished]
+        Floor_No:
+          type: integer
+          minimum: 1
+          maximum: 200
+        Total_Floors:
+          type: integer
+          minimum: 1
+          maximum: 200
+        Age_of_Property:
+          type: integer
+          minimum: 0
+          maximum: 200
+        Year_Built:
+          type: integer
+          minimum: 1900
+          maximum: 2030
+        Nearby_Schools:
+          type: integer
+          minimum: 0
+          maximum: 50
+        Nearby_Hospitals:
+          type: integer
+          minimum: 0
+          maximum: 50
+        Public_Transport_Accessibility:
+          type: string
+          enum: [High, Medium, Low]
+        Parking_Space:
+          type: string
+          enum: ["Yes", "No"]
+        Security:
+          type: string
+          enum: ["Yes", "No"]
+        Facing:
+          type: string
+          enum: [North, South, East, West]
+        Owner_Type:
+          type: string
+          enum: [Owner, Builder, Broker]
+        Availability_Status:
+          type: string
+          enum: [Ready_to_Move, Under_Construction]
+        Price_per_SqFt:
+          type: number
+          minimum: 0.001
+          maximum: 10.0
+          description: Auto-filled from city average if not provided
+
+    PredictionResponse:
+      type: object
+      properties:
+        predictions:
+          type: object
+          description: Individual model predictions in Lakhs
+        ensemble:
+          type: object
+          properties:
+            weighted_ensemble:
+              type: number
+            mean:
+              type: number
+            median:
+              type: number
+            trimmed_mean:
+              type: number
+            best_model:
+              type: object
+              properties:
+                name:
+                  type: string
+                price:
+                  type: number
+            price_range:
+              type: object
+              properties:
+                lower:
+                  type: number
+                upper:
+                  type: number
+                spread:
+                  type: number
+                confidence:
+                  type: string
+                  enum: [High, Medium, Low]
+            model_weights:
+              type: object
+        latency_ms:
+          type: number
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        models_loaded:
+          type: array
+          items:
+            type: string
+        model_count:
+          type: integer
+        feature_count:
+          type: integer
+        gpu_accelerated:
+          type: boolean
+
+    ModelsResponse:
+      type: object
+      properties:
+        models:
+          type: array
+          items:
+            type: string
+        count:
+          type: integer
+        gpu:
+          type: boolean
+        feature_count:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: string

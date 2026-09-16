@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+{% block title %}Predict — House Price Prediction India{% endblock %}
+
+{% block content %}
+{% set active_page = 'predict' %}
+
+<div class="predict-page">
+  <div class="page-header">
+    <h1>Predict House Price</h1>
+    <p>Enter property details to get a price range with confidence level.</p>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Property Details</h2>
+      <form id="predictForm" onsubmit="return predict(event)" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="state">State <span class="required">*</span></label>
+            <select id="state" required aria-required="true">
+              <option value="">-- Select State --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="city">City <span class="required">*</span></label>
+            <select id="city" required aria-required="true" disabled>
+              <option value="">-- Select City --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="property_type">Property Type</label>
+            <select id="property_type">
+              <option value="Apartment">Apartment</option>
+              <option value="Villa">Villa</option>
+              <option value="Independent House" selected>Independent House</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bhk">BHK</label>
+            <select id="bhk">
+              <option value="1">1 BHK</option>
+              <option value="2">2 BHK</option>
+              <option value="3" selected>3 BHK</option>
+              <option value="4">4 BHK</option>
+              <option value="5">5 BHK</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="size">Size (sq ft)</label>
+            <input type="number" id="size" min="50" max="100000" value="1200" required>
+          </div>
+          <div class="form-group">
+            <label for="furnished">Furnished Status</label>
+            <select id="furnished">
+              <option value="Furnished">Furnished</option>
+              <option value="Semi-furnished" selected>Semi-Furnished</option>
+              <option value="Unfurnished">Unfurnished</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="floor_no">Floor No</label>
+            <input type="number" id="floor_no" min="1" max="200" value="3">
+          </div>
+          <div class="form-group">
+            <label for="total_floors">Total Floors</label>
+            <input type="number" id="total_floors" min="1" max="200" value="10">
+          </div>
+          <div class="form-group">
+            <label for="age">Age of Property (years)</label>
+            <input type="number" id="age" min="0" max="200" value="10">
+          </div>
+          <div class="form-group">
+            <label for="year_built">Year Built</label>
+            <input type="number" id="year_built" min="1900" max="2030" value="2015">
+          </div>
+          <div class="form-group">
+            <label for="schools">Nearby Schools</label>
+            <input type="number" id="schools" min="0" max="50" value="5">
+          </div>
+          <div class="form-group">
+            <label for="hospitals">Nearby Hospitals</label>
+            <input type="number" id="hospitals" min="0" max="50" value="5">
+          </div>
+          <div class="form-group">
+            <label for="transport">Public Transport</label>
+            <select id="transport">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="parking">Parking Space</label>
+            <select id="parking">
+              <option value="Yes" selected>Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="security">Security</label>
+            <select id="security">
+              <option value="Yes" selected>Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="facing">Facing</label>
+            <select id="facing">
+              <option value="North">North</option>
+              <option value="South">South</option>
+              <option value="East" selected>East</option>
+              <option value="West">West</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="owner_type">Owner Type</label>
+            <select id="owner_type">
+              <option value="Owner" selected>Owner</option>
+              <option value="Builder">Builder</option>
+              <option value="Broker">Broker</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="availability">Availability Status</label>
+            <select id="availability">
+              <option value="Ready_to_Move">Ready to Move</option>
+              <option value="Under_Construction" selected>Under Construction</option>
+            </select>
+          </div>
+          <div class="form-group full-width" style="margin-top:8px">
+            <label for="pps">Price per SqFt (lakhs) <span style="color:#94a3b8;font-weight:400">auto-filled from city average; override if known</span></label>
+            <input type="number" id="pps" step="0.01" min="0.01" max="10.00" value="0.10" required>
+          </div>
+          <button type="submit" class="btn btn-primary" id="submitBtn" style="grid-column:1/-1">
+            Predict Price &rarr;
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card result-card" id="resultCard">
+      <div class="spinner" id="spinner"></div>
+      <div id="resultContent" style="display:none">
+        <div id="priceRangeCard"></div>
+        <div id="ensembleCard"></div>
+        <h2 style="margin-top: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); font-size:1.1rem;">
+          Individual Model Breakdown
+        </h2>
+        <div class="results-grid" id="resultsGrid" style="margin-top:16px;"></div>
+        <div class="error" id="errorMsg"></div>
+        <div class="error" id="timeoutMsg" style="display:none">
+          Request timed out. The server may be processing a large request.
+          <a href="javascript:location.reload()">Refresh page</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PREDICT_TIMEOUT_MS = 30000;
+
+async function loadLocations() {
+  try {
+    const res = await fetch('/api/states');
+    const data = await res.json();
+    const sel = document.getElementById('state');
+    data.states.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    console.error('Failed to load states', e);
+  }
+}
+
+document.getElementById('state').addEventListener('change', async function() {
+  const citySel = document.getElementById('city');
+  citySel.innerHTML = '<option value="">-- Select City --</option>';
+  citySel.disabled = !this.value;
+  document.getElementById('pps').value = '0.10';
+  if (!this.value) return;
+  try {
+    const res = await fetch(`/api/cities?state=${encodeURIComponent(this.value)}`);
+    const data = await res.json();
+    data.cities.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      citySel.appendChild(opt);
+    });
+  } catch(e) {
+    console.error('Failed to load cities', e);
+  }
+});
+
+document.getElementById('city').addEventListener('change', async function() {
+  const state = document.getElementById('state').value;
+  if (state && this.value) {
+    try {
+      const res = await fetch(`/api/rate?state=${encodeURIComponent(state)}&city=${encodeURIComponent(this.value)}`);
+      const data = await res.json();
+      document.getElementById('pps').value = data.Price_per_SqFt.toFixed(2);
+    } catch(e) {}
+  }
+});
+
+function fmtPrice(n) {
+  return 'Rs ' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Lakhs';
+}
+
+function fmtPriceCr(n) {
+  const cr = n / 100;
+  if (cr >= 1) return 'Rs ' + Number(cr).toLocaleString('en-IN', { maximumFractionDigits: 2 }) + ' Crores';
+  return fmtPrice(n);
+}
+
+function fmtPriceShort(n) {
+  return 'Rs ' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
+function validateForm() {
+  const state = document.getElementById('state').value;
+  const city = document.getElementById('city').value;
+  const size = parseInt(document.getElementById('size').value);
+  const floor = parseInt(document.getElementById('floor_no').value || 1);
+  const totalFloors = parseInt(document.getElementById('total_floors').value || 1);
+
+  if (!state) return 'Please select a State.';
+  if (!city) return 'Please select a City.';
+  if (!size || size < 150) return 'Size must be at least 150 sq ft.';
+  if (floor > totalFloors) return 'Floor number cannot exceed total floors.';
+  return null;
+}
+
+async function predict(event) {
+  event.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const spinner = document.getElementById('spinner');
+  const resultCard = document.getElementById('resultCard');
+  const resultContent = document.getElementById('resultContent');
+  const resultsGrid = document.getElementById('resultsGrid');
+  const ensembleCard = document.getElementById('ensembleCard');
+  const priceRangeCard = document.getElementById('priceRangeCard');
+  const errorMsg = document.getElementById('errorMsg');
+  const timeoutMsg = document.getElementById('timeoutMsg');
+
+  const validationError = validateForm();
+  if (validationError) {
+    errorMsg.textContent = validationError;
+    resultCard.classList.add('visible');
+    resultContent.style.display = 'block';
+    return false;
+  }
+
+    btn.disabled = true; btn.innerHTML = 'Predicting...';
+  spinner.classList.add('active');
+  resultCard.classList.add('visible');
+  resultContent.style.display = 'none';
+  resultsGrid.innerHTML = ensembleCard.innerHTML = priceRangeCard.innerHTML = '';
+  errorMsg.textContent = '';
+  timeoutMsg.style.display = 'none';
+
+  const features = {
+    State: document.getElementById('state').value,
+    City: document.getElementById('city').value,
+    Property_Type: document.getElementById('property_type').value,
+    BHK: parseInt(document.getElementById('bhk').value),
+    Size_in_SqFt: parseInt(document.getElementById('size').value),
+    Furnished_Status: document.getElementById('furnished').value,
+    Floor_No: parseInt(document.getElementById('floor_no').value || 1),
+    Total_Floors: parseInt(document.getElementById('total_floors').value || 1),
+    Age_of_Property: parseInt(document.getElementById('age').value || 0),
+    Year_Built: parseInt(document.getElementById('year_built').value || 2020),
+    Nearby_Schools: parseInt(document.getElementById('schools').value || 0),
+    Nearby_Hospitals: parseInt(document.getElementById('hospitals').value || 0),
+    Public_Transport_Accessibility: document.getElementById('transport').value,
+    Parking_Space: document.getElementById('parking').value,
+    Security: document.getElementById('security').value,
+    Facing: document.getElementById('facing').value,
+    Owner_Type: document.getElementById('owner_type').value,
+    Availability_Status: document.getElementById('availability').value,
+    Price_per_SqFt: parseFloat(document.getElementById('pps').value || 0.10),
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PREDICT_TIMEOUT_MS);
+
+  try {
+    const res = await fetch('/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ features }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || err.details?.join(', ') || 'Prediction failed');
+    }
+
+    const data = await res.json();
+    const preds = data.predictions;
+    const ens = data.ensemble;
+    const entries = Object.entries(preds).sort((a, b) => a[0].localeCompare(b[0]));
+
+    let rangeConfidenceClass = 'green';
+    if (ens.price_range.confidence === 'Medium') rangeConfidenceClass = 'amber';
+    else if (ens.price_range.confidence === 'Low') rangeConfidenceClass = 'red';
+
+    priceRangeCard.innerHTML = `
+      <div class="ensemble-primary" style="border-color: #10b981;">
+        <div class="label">Predicted Price Range</div>
+        <div style="display:flex;justify-content:center;gap:20px;align-items:center;margin:12px 0;flex-wrap:wrap;">
+          <div style="text-align:center">
+            <div style="font-size:0.8rem;color:#94a3b8">Lower Bound</div>
+            <div style="font-size:1.5rem;font-weight:700;color:#f1f5f9">${fmtPriceShort(ens.price_range.lower)}</div>
+          </div>
+          <div style="font-size:2.5rem;font-weight:800;color:#10b981;min-width:200px">${fmtPriceCr(ens.weighted_ensemble)}</div>
+          <div style="text-align:center">
+            <div style="font-size:0.8rem;color:#94a3b8">Upper Bound</div>
+            <div style="font-size:1.5rem;font-weight:700;color:#f1f5f9">${fmtPriceShort(ens.price_range.upper)}</div>
+          </div>
+        </div>
+        <div class="method">
+          Confidence: <strong style="color:var(--${rangeConfidenceClass === 'red' ? 'danger' : rangeConfidenceClass === 'amber' ? 'warning' : 'success'})">${ens.price_range.confidence}</strong>
+          &middot; Spread: ${fmtPriceShort(ens.price_range.spread)}
+          ${data.latency_ms ? '&middot; ' + data.latency_ms + 'ms' : ''}
+        </div>
+      </div>
+    `;
+
+    ensembleCard.innerHTML = `
+      <div class="ensemble-secondary">
+        <div class="ensemble-stat">
+          <div class="stat-label">Mean</div>
+          <div class="stat-value blue">${fmtPrice(ens.mean)}</div>
+        </div>
+        <div class="ensemble-stat">
+          <div class="stat-label">Median</div>
+          <div class="stat-value green">${fmtPrice(ens.median)}</div>
+        </div>
+        <div class="ensemble-stat">
+          <div class="stat-label">Trimmed Mean</div>
+          <div class="stat-value amber">${fmtPrice(ens.trimmed_mean)}</div>
+        </div>
+        <div class="ensemble-stat">
+          <div class="stat-label">Weighted</div>
+          <div class="stat-value purple">${fmtPrice(ens.weighted_ensemble)}</div>
+        </div>
+        <div class="ensemble-stat">
+          <div class="stat-label">Best Model</div>
+          <div class="stat-value green">${ens.best_model.name.replace(/_/g, ' ')}</div>
+        </div>
+        <div class="ensemble-stat">
+          <div class="stat-label">Range</div>
+          <div class="stat-value" style="font-size:0.85rem">${fmtPrice(ens.price_range.lower)} -- ${fmtPrice(ens.price_range.upper)}</div>
+        </div>
+      </div>
+      <div class="method-note">
+        <strong>Weighted Ensemble:</strong> Models are weighted by their test performance (R&sup2;, MAE, MAPE).
+        <code>final = Sum(price_i x w_i) / Sum(w_i)</code> &nbsp; Range = Ensemble +/- 1.5 sigma
+      </div>
+    `;
+
+    let html = '';
+    for (const [model, price] of entries) {
+      const isBest = model === ens.best_model.name;
+      const weight = (ens.model_weights && ens.model_weights[model] !== undefined)
+        ? (ens.model_weights[model] * 100).toFixed(1) + '%'
+        : '';
+      html += `<div class="model-result" style="${isBest ? 'border-color:var(--accent);background:var(--accent-glow)' : ''}">
+        <div class="name">${model.replace(/_/g, ' ')} ${isBest ? '*' : ''}</div>
+        <div class="price">${fmtPrice(price)}</div>
+        <div class="meta">${weight ? 'Weight: ' + weight : ''} ${isBest ? 'Best' : ''}</div>
+      </div>`;
+    }
+    resultsGrid.innerHTML = html;
+    resultContent.style.display = 'block';
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      timeoutMsg.style.display = 'block';
+    } else {
+      errorMsg.textContent = err.message;
+    }
+    resultContent.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'Predict Price \u2192';
+    spinner.classList.remove('active');
+  }
+  return false;
+}
+
+loadLocations();
+</script>
+{% endblock %}

@@ -1,0 +1,174 @@
+{
+  "Andhra Pradesh|Vijayawada": {
+    "mean": 0.1316,
+    "median": 0.09
+  },
+  "Andhra Pradesh|Vishakhapatnam": {
+    "mean": 0.1324,
+    "median": 0.09
+  },
+  "Assam|Guwahati": {
+    "mean": 0.13,
+    "median": 0.09
+  },
+  "Assam|Silchar": {
+    "mean": 0.1316,
+    "median": 0.09
+  },
+  "Bihar|Gaya": {
+    "mean": 0.1315,
+    "median": 0.09
+  },
+  "Bihar|Patna": {
+    "mean": 0.1296,
+    "median": 0.09
+  },
+  "Chhattisgarh|Bilaspur": {
+    "mean": 0.1293,
+    "median": 0.09
+  },
+  "Chhattisgarh|Raipur": {
+    "mean": 0.1312,
+    "median": 0.09
+  },
+  "Delhi|Dwarka": {
+    "mean": 0.1291,
+    "median": 0.09
+  },
+  "Delhi|New Delhi": {
+    "mean": 0.1298,
+    "median": 0.09
+  },
+  "Gujarat|Ahmedabad": {
+    "mean": 0.1282,
+    "median": 0.09
+  },
+  "Gujarat|Surat": {
+    "mean": 0.1339,
+    "median": 0.09
+  },
+  "Haryana|Faridabad": {
+    "mean": 0.1301,
+    "median": 0.09
+  },
+  "Haryana|Gurgaon": {
+    "mean": 0.1312,
+    "median": 0.09
+  },
+  "Jharkhand|Jamshedpur": {
+    "mean": 0.1283,
+    "median": 0.09
+  },
+  "Jharkhand|Ranchi": {
+    "mean": 0.1312,
+    "median": 0.09
+  },
+  "Karnataka|Bangalore": {
+    "mean": 0.1314,
+    "median": 0.09
+  },
+  "Karnataka|Mangalore": {
+    "mean": 0.1337,
+    "median": 0.1
+  },
+  "Karnataka|Mysore": {
+    "mean": 0.1325,
+    "median": 0.09
+  },
+  "Kerala|Kochi": {
+    "mean": 0.1321,
+    "median": 0.09
+  },
+  "Kerala|Trivandrum": {
+    "mean": 0.1276,
+    "median": 0.09
+  },
+  "Madhya Pradesh|Bhopal": {
+    "mean": 0.1296,
+    "median": 0.09
+  },
+  "Madhya Pradesh|Indore": {
+    "mean": 0.1319,
+    "median": 0.09
+  },
+  "Maharashtra|Mumbai": {
+    "mean": 0.1317,
+    "median": 0.09
+  },
+  "Maharashtra|Nagpur": {
+    "mean": 0.1274,
+    "median": 0.09
+  },
+  "Maharashtra|Pune": {
+    "mean": 0.133,
+    "median": 0.1
+  },
+  "Odisha|Bhubaneswar": {
+    "mean": 0.1313,
+    "median": 0.09
+  },
+  "Odisha|Cuttack": {
+    "mean": 0.1293,
+    "median": 0.09
+  },
+  "Punjab|Amritsar": {
+    "mean": 0.1293,
+    "median": 0.09
+  },
+  "Punjab|Ludhiana": {
+    "mean": 0.1293,
+    "median": 0.09
+  },
+  "Rajasthan|Jaipur": {
+    "mean": 0.1293,
+    "median": 0.09
+  },
+  "Rajasthan|Jodhpur": {
+    "mean": 0.1294,
+    "median": 0.09
+  },
+  "Tamil Nadu|Chennai": {
+    "mean": 0.1316,
+    "median": 0.09
+  },
+  "Tamil Nadu|Coimbatore": {
+    "mean": 0.1311,
+    "median": 0.09
+  },
+  "Telangana|Hyderabad": {
+    "mean": 0.1323,
+    "median": 0.09
+  },
+  "Telangana|Warangal": {
+    "mean": 0.1296,
+    "median": 0.09
+  },
+  "Uttar Pradesh|Lucknow": {
+    "mean": 0.1314,
+    "median": 0.09
+  },
+  "Uttar Pradesh|Noida": {
+    "mean": 0.1314,
+    "median": 0.09
+  },
+  "Uttarakhand|Dehradun": {
+    "mean": 0.13,
+    "median": 0.09
+  },
+  "Uttarakhand|Haridwar": {
+    "mean": 0.1304,
+    "median": 0.09
+  },
+  "West Bengal|Durgapur": {
+    "mean": 0.1319,
+    "median": 0.09
+  },
+  "West Bengal|Kolkata": {
+    "mean": 0.1294,
+    "median": 0.09
+  },
+  "__default__": {
+    "mean": 0.09,
+    "median": 0.09
+  }
+}

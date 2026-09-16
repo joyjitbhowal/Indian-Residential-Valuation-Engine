@@ -1,0 +1,486 @@
+\documentclass[aspectratio=169, 12pt]{beamer}
+
+% --- Packages ---------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+
+% --- Beamer Setup -----------------------------------------------------------
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\definecolor{iitgblue}{RGB}{26,60,110}
+\definecolor{iitglight}{RGB}{240,245,255}
+
+\setbeamercolor{title}{fg=white,bg=iitgblue}
+\setbeamercolor{frametitle}{fg=white,bg=iitgblue}
+\setbeamercolor{block title}{bg=iitgblue,fg=white}
+\setbeamercolor{block body}{bg=iitglight,fg=black}
+\setbeamercolor{structure}{fg=iitgblue}
+\setbeamercolor{section in head/foot}{bg=iitgblue,fg=white}
+
+% --- Title Page ------------------------------------------------------------
+\title{House Price Prediction System}
+\subtitle{for Indian Residential Properties}
+\author[Team]{%
+  Joyjit Bhowal \and
+  Rishabh Kumar \and
+  Sudipto Gogoi
+}
+\institute[IIT Guwahati]{Indian Institute of Technology Guwahati}
+\date{July 2026}
+
+\newcommand{\figdir}{fig}
+
+\titlegraphic{%
+  \includegraphics[width=1.2cm]{\figdir/logo_iitg.png}\hspace{1.5cm}%
+  \includegraphics[width=1.6cm]{\figdir/logo_tidf.png}
+}
+
+\begin{document}
+
+% ============================================================================
+%  TITLE SLIDE
+% ============================================================================
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ============================================================================
+%  OUTLINE
+% ============================================================================
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+% ============================================================================
+%  1. INTRODUCTION
+% ============================================================================
+\section{Introduction}
+
+\begin{frame}{Problem Statement}
+  \textbf{Current practice:} Property valuation in India relies on local
+  brokers, recent comparable sales and subjective judgment.
+
+  \medskip
+  \textbf{Limitations:}
+  \begin{itemize}
+    \item Inconsistent quality across valuers
+    \item Slow turnaround
+    \item Susceptible to bias
+    \item Difficult to scale across 20+ states
+  \end{itemize}
+
+  \medskip
+  \textbf{Goal:} Build an automated, data-driven valuation tool that delivers
+  fast, consistent and accurate price estimates for the Indian market.
+\end{frame}
+
+\begin{frame}{Objectives}
+  \begin{enumerate}
+    \item \textbf{Data pipeline} --- preprocessing and feature engineering for
+          Indian housing records.
+    \item \textbf{Multi-model training} --- XGBoost, LightGBM (GPU) and Random
+          Forest on a common train/val/test split.
+    \item \textbf{Weighted ensemble} --- composite performance scores to combine
+          models robustly.
+    \item \textbf{Confidence output} --- price range with High / Medium / Low
+          indicator.
+    \item \textbf{Web deployment} --- Flask REST API with a browser UI.
+    \item \textbf{Accuracy target} --- R\textsuperscript{2} $\ge$ 0.85,
+          MAPE $<$ 10\%.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Scope and Limitations}
+  \textbf{In scope:}
+  \begin{itemize}
+    \item Residential properties
+    \item 20 Indian states, 42 cities
+  \end{itemize}
+
+  \textbf{Out of scope:}
+  \begin{itemize}
+    \item Commercial / agricultural properties
+    \item Macroeconomic factors (interest rates, inflation)
+    \item Temporal trends and market cycles
+  \end{itemize}
+
+  \medskip
+  \emph{Predictions are estimates for decision support, not formal appraisals.}
+\end{frame}
+
+% ============================================================================
+%  2. DATASET
+% ============================================================================
+\section{Dataset}
+
+\begin{frame}{Dataset Overview}
+  \begin{itemize}
+    \item \textbf{Records:} 248,543 residential property records
+    \item \textbf{Cities:} 42 across 20 states
+    \item \textbf{Raw features:} 23 attributes
+    \item \textbf{After engineering:} 106 features
+    \item \textbf{Target:} \texttt{Price\_in\_Lakhs} (\textrupee)
+  \end{itemize}
+
+  \medskip
+  \begin{center}
+    \begin{tabular}{lr}
+      \toprule
+      Split & Size \\
+      \midrule
+      Training (70\%) & 173,979 \\
+      Validation (10\%) & 24,855 \\
+      Test (20\%) & 49,709 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Feature Groups}
+  \begin{center}
+    \small
+    \begin{tabular}{lll}
+      \toprule
+      Group & Features & Description \\
+      \midrule
+      Geographic & State, City & Location \\
+      Structural & Property\_Type, BHK, Size\_in\_SqFt, Floor\_No &
+        Physical characteristics \\
+      Temporal & Year\_Built, Age\_of\_Property & Age / construction \\
+      Rate & Price\_per\_SqFt & Price per sq.\ ft. (strongest predictor) \\
+      Locality & Nearby\_Schools, Hospitals, Transport &
+        Neighbourhood amenities \\
+      Condition & Furnished\_Status, Availability & Occupancy status \\
+      Other & Parking, Security, Facing, Owner\_Type & Additional attributes \\
+      Target & Price\_in\_Lakhs & Sale price \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Feature Engineering}
+  The raw 23 attributes are expanded to 106 features:
+  \begin{itemize}
+    \item \textbf{Ratios:} \texttt{floor\_ratio}, \texttt{sqft\_per\_bhk},
+          \texttt{school\_hospital\_ratio}
+    \item \textbf{Flags:} \texttt{is\_top\_floor}, \texttt{is\_new\_property},
+          \texttt{has\_parking}, \texttt{has\_security}
+    \item \textbf{Interactions:} \texttt{bhk\_x\_size}, \texttt{size\_x\_pps}
+    \item \textbf{Log transforms:} \texttt{log\_size},
+          \texttt{log\_price\_per\_sqft}
+    \item \textbf{Counts:} \texttt{nearby\_amenities\_total},
+          \texttt{amenity\_count}
+    \item \textbf{Polynomial:} \texttt{age\_squared}, \texttt{bhk\_squared}
+    \item \textbf{Binned:} \texttt{decade\_built}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Correlation Analysis}
+  \begin{columns}
+    \column{0.55\textwidth}
+      \includegraphics[width=\textwidth]{\figdir/correlation.png}
+    \column{0.45\textwidth}
+      \begin{itemize}
+        \item Price\_per\_SqFt has the strongest linear relationship
+              ($\rho \approx 0.56$).
+        \item Most other individual features show weak linear correlation.
+        \item Tree-based models are chosen precisely because they capture
+              non-linear interactions.
+      \end{itemize}
+  \end{columns}
+\end{frame}
+
+% ============================================================================
+%  3. METHODOLOGY
+% ============================================================================
+\section{Methodology}
+
+\begin{frame}{System Architecture}
+  \begin{enumerate}
+    \item \textbf{Data layer} --- CSV ingestion and schema validation
+    \item \textbf{Preprocessing} --- cleaning, one-hot encoding, feature
+          engineering
+    \item \textbf{Scaling} --- MinMaxScaler $\to [0,1]$
+    \item \textbf{Training} --- XGBoost, LightGBM (GPU), Random Forest
+    \item \textbf{Ensemble} --- composite scoring $\to$ weighted average
+          $\to$ price range
+    \item \textbf{Deployment} --- Flask REST API + web interface
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Preprocessing Pipeline}
+  \begin{enumerate}
+    \item \textbf{Deduplication} --- remove duplicate rows
+    \item \textbf{Outlier censoring} --- clip to [0.2, 99.8] percentiles
+    \item \textbf{Null handling} --- drop rows with missing values
+    \item \textbf{Amenity parsing} --- \texttt{Amenities} $\to$
+          \texttt{amenity\_count}
+    \item \textbf{Encoding} --- binary $\to$ \{0,1\}, categorical $\to$ one-hot
+    \item \textbf{Split} --- 70/10/20 with \texttt{random\_state=42}
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Models --- XGBoost}
+  \textbf{Approach:} Sequential gradient boosting with histogram-based trees.
+
+  \medskip
+  \textbf{Configuration:}
+  \begin{itemize}
+    \item \texttt{max\_depth=6},\; \texttt{learning\_rate=0.03}
+    \item \texttt{subsample=0.8},\; \texttt{colsample\_bytree=0.8}
+    \item \texttt{reg\_alpha=0.1},\; \texttt{reg\_lambda=1.0}
+    \item \texttt{tree\_method='hist'}
+  \end{itemize}
+
+  \medskip
+  \textbf{Result:} Early stopping at 268 trees.
+\end{frame}
+
+\begin{frame}{Models --- LightGBM (GPU)}
+  \textbf{Approach:} Leaf-wise gradient boosting with GPU acceleration.
+
+  \medskip
+  \textbf{Configuration:}
+  \begin{itemize}
+    \item \texttt{max\_depth=6},\; \texttt{learning\_rate=0.03}
+    \item \texttt{num\_leaves=63},\; \texttt{subsample=0.8}
+    \item \texttt{colsample\_bytree=0.8}
+    \item \texttt{device='gpu'} (NVIDIA RTX 3060, 6 GB VRAM)
+  \end{itemize}
+
+  \medskip
+  \textbf{Result:} Early stopping at 365 trees, training $\approx$ 16 seconds.
+\end{frame}
+
+\begin{frame}{Models --- Random Forest}
+  \textbf{Approach:} Bootstrap aggregation with random feature selection.
+
+  \medskip
+  \textbf{Configuration:}
+  \begin{itemize}
+    \item \texttt{n\_estimators=300},\; \texttt{max\_depth=25}
+    \item \texttt{min\_samples\_split=5},\; \texttt{min\_samples\_leaf=2}
+    \item \texttt{max\_features=1.0},\; \texttt{n\_jobs=-1}
+  \end{itemize}
+
+  \medskip
+  \textbf{Result:} Training on CPU $\approx$ 6 minutes.
+\end{frame}
+
+\begin{frame}{Weighted Ensemble --- Scoring}
+  Each model $i$ receives a composite score $S_i$ based on three test-set metrics:
+
+  \medskip
+  \[
+  S_i = \frac{ R^2_i \;+\; \dfrac{1}{1+\mathrm{MAE}_i/100} \;+\;
+         \dfrac{1}{1+\mathrm{MAPE}_i/100} }{3}
+  \]
+
+  \medskip
+  Scores are normalised to sum to one, producing weights $w_i$.
+
+  \[
+  \hat{y} = \frac{\sum w_i \cdot p_i}{\sum w_i}
+  \]
+
+  \medskip
+  \textbf{Price range:} $\hat{y} \pm 1.5\sigma$, where $\sigma$ is the
+  standard deviation of the three individual predictions.
+
+  \medskip
+  \textbf{Confidence:} High if $\sigma < 20$ Lakhs, Medium if
+  $20\le\sigma<50$, Low otherwise.
+\end{frame}
+
+\begin{frame}{Deployment --- API Endpoints}
+  \begin{center}
+    \small
+    \begin{tabular}{lll}
+      \toprule
+      Endpoint & Method & Purpose \\
+      \midrule
+      \texttt{/} & GET & Landing page \\
+      \texttt{/predict} & GET & Property input form \\
+      \texttt{/predict} & POST & JSON prediction response \\
+      \texttt{/health} & GET & Health check + GPU status \\
+      \texttt{/api/states} & GET & List of states \\
+      \texttt{/api/cities} & GET & Cities by state \\
+      \texttt{/api/rate} & GET & Median Price\_per\_SqFt per city \\
+      \texttt{/api/comparison} & GET & Model comparison metrics \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  City-specific Price\_per\_SqFt is auto-filled from
+  \texttt{city\_rates.json} when the user selects a city.
+\end{frame}
+
+% ============================================================================
+%  4. RESULTS
+% ============================================================================
+\section{Results and Analysis}
+
+\begin{frame}{Test Set Performance}
+  All models evaluated on 49,709 held-out records.
+
+  \bigskip
+  \begin{center}
+    \begin{tabular}{lccccc}
+      \toprule
+      Model & $R^2$ & MAE (\textrupee L) & RMSE (\textrupee L) & MAPE (\%) & Score \\
+      \midrule
+      XGBoost  & 0.9962 & 6.79 & 8.68 & 5.04 & 0.9615 \\
+      LightGBM & 0.9962 & 6.81 & 8.71 & 5.03 & 0.9615 \\
+      R.\ Forest & 0.9961 & 6.85 & 8.84 & 5.06 & 0.9613 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \bigskip
+  \textbf{All targets exceeded:}
+  \begin{itemize}
+    \item Target $R^2 \ge 0.85$ \quad$\to$\quad Achieved 0.9962
+    \item Target MAPE $< 10\%$ \quad$\to$\quad Achieved $\approx 5.0\%$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Model Performance Comparison}
+  \includegraphics[width=\textwidth]{\figdir/performance.png}
+\end{frame}
+
+\begin{frame}{Prediction Accuracy}
+  \includegraphics[width=\textwidth]{\figdir/accuracy.png}
+\end{frame}
+
+\begin{frame}{Feature Importance}
+  \includegraphics[width=0.85\textwidth]{\figdir/importance.png}
+\end{frame}
+
+\begin{frame}{Training Efficiency}
+  \begin{center}
+    \begin{tabular}{lcccl}
+      \toprule
+      Model & Trees & Hardware & Time & Early Stop \\
+      \midrule
+      XGBoost  & 268 & CPU (hist) & $\sim$17\,s & Yes \\
+      LightGBM & 365 & RTX 3060 GPU & $\sim$16\,s & Yes \\
+      R. Forest & 300 & CPU (parallel) & $\sim$6\,min & N/A \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \bigskip
+  \begin{itemize}
+    \item GPU training is 20$\times$ faster than a CPU-only Random Forest
+    \item Early stopping prevents overfitting and minimises computation
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{API Response Example}
+  \textbf{Input:} 1,200 sq.\ ft.\ apartment in Mumbai
+
+  \medskip
+  \begin{lstlisting}[basicstyle=\ttfamily\small, frame=single]
+{
+  "predictions": {
+    "xgboost": 12.08,
+    "lightgbm": 12.42,
+    "random_forest": 10.69
+  },
+  "ensemble": {
+    "weighted_ensemble": 11.73,
+    "price_range": {
+      "lower": 10.61,
+      "upper": 12.85,
+      "confidence": "High"
+    }
+  }
+}
+  \end{lstlisting}
+\end{frame}
+
+% ============================================================================
+%  5. CONCLUSION
+% ============================================================================
+\section{Conclusion}
+
+\begin{frame}{Summary of Achievements}
+  \begin{itemize}
+    \item \textbf{Performance:} Ensemble $R^2 = 0.9962$, MAPE $\approx 5.0\%$
+          --- far beyond the $R^2 \ge 0.85$ target.
+    \item \textbf{GPU training:} LightGBM trains in $\approx 16$ seconds on an
+          RTX 3060.
+    \item \textbf{Robust ensemble:} Weighted composite scoring produces
+          predictions that are more reliable than any single model.
+    \item \textbf{Confidence output:} Price range + confidence indicator
+          gives users actionable information.
+    \item \textbf{Pan-India:} Trained on data from 20 states and 42 cities.
+    \item \textbf{Production-ready:} Flask web service with auto-filled city
+          rates minimises user input.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Success Metrics}
+  \begin{center}
+    \begin{tabular}{lccc}
+      \toprule
+      Metric & Target & Achieved & Status \\
+      \midrule
+      Test $R^2$   & $\ge 0.85$  & 0.9962 & Exceeded \\
+      Test MAPE    & $< 10\%$    & 5.0\%  & Exceeded \\
+      Latency      & $< 500$ ms  & $< 100$ ms & Exceeded \\
+      Retrain time & $< 5$ min   & $\sim 7$ min & Near target \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Future Work}
+  \begin{enumerate}
+    \item Time-series modelling to capture market trends and seasonality
+    \item Geospatial clustering using latitude / longitude coordinates
+    \item SHAP / LIME explanations for individual predictions
+    \item Deep learning (MLP, Transformer) for complex interactions
+    \item Automated CI/CD pipeline for continuous model retraining
+    \item Interactive dashboard (Streamlit) for exploratory analysis
+  \end{enumerate}
+\end{frame}
+
+% ============================================================================
+%  GROUP MEMBERS
+% ============================================================================
+\section*{Group Members}
+
+\begin{frame}{Group Members}
+  \centering
+  \bigskip
+  \textbf{Project Team}
+
+  \bigskip
+  \begin{tabular}{c}
+    \toprule
+    Name \\
+    \midrule
+    Joyjit Bhowal \\
+    Rishabh Kumar \\
+    Sudipto Gogoi \\
+    \bottomrule
+  \end{tabular}
+
+  \bigskip\bigskip
+  \emph{Indian Institute of Technology Guwahati}
+
+  \medskip
+  July 2026
+\end{frame}
+
+\end{document}

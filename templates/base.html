@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ML-powered house price prediction for Indian residential properties using XGBoost, LightGBM, and Random Forest ensemble.">
+  <title>{% block title %}House Price Prediction — India{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+</head>
+<body>
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <a href="/" class="logo" aria-label="Home">
+      <span class="logo-icon" aria-hidden="true">&#8962;</span>
+      House Price Prediction
+    </a>
+    <div class="nav-links">
+      <a href="/" class="{{ 'active' if active_page == 'home' else '' }}">Home</a>
+      <a href="/predict" class="{{ 'active' if active_page == 'predict' else '' }}">Predict</a>
+    </div>
+  </nav>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <p>House Price Prediction for Indian Residential Properties &mdash; XGBoost &middot; LightGBM &middot; Random Forest</p>
+    <p style="margin-top:4px">
+      <a href="/health">API Health</a> &middot;
+      <a href="/api/comparison">Model Comparison</a> &middot;
+      <a href="/api/scores">Scores</a>
+    </p>
+  </footer>
+</body>
+</html>

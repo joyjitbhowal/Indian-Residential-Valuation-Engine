@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}House Price Prediction — India{% endblock %}
+
+{% block content %}
+{% set active_page = 'home' %}
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">3-Model Ensemble &middot; 250K Records &middot; Pan-India</div>
+    <h1>House Price Prediction<br><span>for Indian Residential Properties</span></h1>
+    <p>
+      An ensemble of XGBoost, LightGBM (GPU), and Random Forest models trained on <strong>248,543 records</strong>
+      across <strong>20 states</strong> and <strong>42 cities</strong>. Each prediction includes a confidence-scored price range.
+    </p>
+    <div class="hero-actions">
+      <a href="/predict" class="btn btn-primary">
+        Predict a Property &rarr;
+      </a>
+      <a href="#how-it-works" class="btn btn-secondary">
+        How It Works
+      </a>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-value" id="statModels">3</div>
+    <div class="stat-label">ML Models</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="statStates">20</div>
+    <div class="stat-label">States Covered</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="statCities">42</div>
+    <div class="stat-label">Cities Covered</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="statFeatures">--</div>
+    <div class="stat-label">Features</div>
+  </div>
+</div>
+
+<section class="section" id="features">
+  <div class="section-header">
+    <h2>How Predictions Are Made</h2>
+    <p>Three models, each with a different learning strategy, combined through composite scoring.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">&#9650;</div>
+      <h3>XGBoost</h3>
+      <p>Gradient-boosted decision trees with histogram-based training. 2,000 trees at max_depth=6 with L1/L2 regularisation and early stopping.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#9632;</div>
+      <h3>LightGBM (GPU)</h3>
+      <p>Leaf-wise tree growth accelerated on NVIDIA GPU. Trained with the same 2,000-tree budget and early stopping, converging in ~16 seconds.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#9670;</div>
+      <h3>Random Forest</h3>
+      <p>Bootstrap-aggregated ensemble of 300 decision trees (max_depth=25) utilising all CPU cores via n_jobs=-1 for parallel training.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#9744;</div>
+      <h3>Weighted Ensemble</h3>
+      <p>Each model is scored on test-set R², MAE, and MAPE. The composite determines each model's weight in the final prediction. Output includes a price range at &plusmn;1.5&sigma; with confidence level.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section how-it-works-section" id="how-it-works" style="background:rgba(255,255,255,0.02);border-radius:20px;">
+  <div class="section-header">
+    <h2>Using the System</h2>
+    <p>Three steps to get a prediction.</p>
+  </div>
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-number">1</div>
+      <h3>Select Location</h3>
+      <p>Choose the state and city from our database of 20 states and 42 cities. The city-specific median price-per-sqft rate is automatically loaded.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">2</div>
+      <h3>Enter Property Details</h3>
+      <p>Provide BHK, size, furnishing status, floor, amenities, and other attributes. The API validates every field — types, ranges, and logical consistency (e.g. floor &le; total floors).</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">3</div>
+      <h3>View Results</h3>
+      <p>Each model returns a price. The ensemble combines them into a weighted prediction with a confidence-scored range. All responses include per-model breakdowns and latency.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-header">
+    <h2>Model Performance</h2>
+    <p>Evaluated on a held-out test set of 49,709 records (70/10/20 train/val/test split).</p>
+  </div>
+  <div class="comparison-preview" id="comparisonWrapper">
+    <div class="spinner active" id="comparisonSpinner"></div>
+    <p id="comparisonError" class="error" style="display:none">Failed to load comparison data. <a href="javascript:loadComparison()">Retry</a></p>
+    <p id="comparisonTimeout" class="error" style="display:none">Request timed out. <a href="javascript:loadComparison()">Retry</a></p>
+  </div>
+  <div style="text-align:center;margin-top:20px">
+    <a href="/predict" class="btn btn-primary btn-sm">Try a Prediction &rarr;</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-header">
+    <h2>Pipeline &amp; Infrastructure</h2>
+    <p>From raw CSV to production API.</p>
+  </div>
+  <div class="trust-grid">
+    <div class="trust-item">
+      <div class="value" id="statPipelineFeatures">--</div>
+      <div class="label">Engineered Features</div>
+    </div>
+    <div class="trust-item">
+      <div class="value">0.996</div>
+      <div class="label">Test R&sup2; (ensemble)</div>
+    </div>
+    <div class="trust-item">
+      <div class="value">&lt;100ms</div>
+      <div class="label">API Latency (p95)</div>
+    </div>
+    <div class="trust-item">
+      <div class="value">&plusmn;1.5&sigma;</div>
+      <div class="label">Price Range Width</div>
+    </div>
+    <div class="trust-item">
+      <div class="value">60/m</div>
+      <div class="label">Rate Limit per IP</div>
+    </div>
+    <div class="trust-item">
+      <div class="value">4</div>
+      <div class="label">Gunicorn Workers</div>
+    </div>
+  </div>
+</section>
+
+<div class="cta-section">
+    <h2>Try It Yourself</h2>
+  <p>Enter property details and receive an instant ensemble prediction with price range.</p>
+  <a href="/predict" class="btn btn-primary">Predict a Property &rarr;</a>
+</div>
+
+<script>
+  const COMPARISON_TIMEOUT_MS = 10000;
+
+  async function loadComparison() {
+    const wrapper = document.getElementById('comparisonWrapper');
+    const spinner = document.getElementById('comparisonSpinner');
+    const errorEl = document.getElementById('comparisonError');
+    const timeoutEl = document.getElementById('comparisonTimeout');
+
+    spinner.classList.add('active');
+    errorEl.style.display = 'none';
+    timeoutEl.style.display = 'none';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), COMPARISON_TIMEOUT_MS);
+
+    try {
+      const res = await fetch('/api/comparison', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error('Failed');
+      const data = await res.json();
+
+      let scores = {};
+      try {
+        const sres = await fetch('/api/scores');
+        if (sres.ok) scores = await sres.json();
+      } catch(e) {}
+
+      let table = '<table class="comparison-table">';
+      table += '<tr><th>Model</th><th>R&sup2;</th><th>MAE (Lakhs)</th><th>RMSE (Lakhs)</th><th>MAPE</th><th>Score</th></tr>';
+
+      const entries = Object.entries(data).sort((a, b) => b[1].test.r2 - a[1].test.r2);
+      const bestR2 = entries.length > 0 ? entries[0][1].test.r2 : 0;
+      for (const [name, m] of entries) {
+        const t = m.test;
+        const score = scores[name] ? (scores[name] * 100).toFixed(1) + '%' : '--';
+        const isBest = t.r2 === bestR2;
+        table += `<tr class="${isBest ? 'best' : ''}">`;
+        table += `<td>${name.replace(/_/g, ' ')}${isBest ? ' <span class="badge badge-best">BEST</span>' : ''}</td>`;
+        table += `<td>${t.r2.toFixed(4)}</td>`;
+        table += `<td>${Number(t.mae).toLocaleString('en-IN', {maximumFractionDigits:2})}</td>`;
+        table += `<td>${Number(t.rmse).toLocaleString('en-IN', {maximumFractionDigits:2})}</td>`;
+        table += `<td>${t.mape.toFixed(1)}%</td>`;
+        table += `<td>${score}</td></tr>`;
+      }
+      table += '</table>';
+      spinner.classList.remove('active');
+      wrapper.innerHTML = table;
+    } catch (e) {
+      spinner.classList.remove('active');
+      if (e.name === 'AbortError') {
+        timeoutEl.style.display = 'block';
+      } else {
+        errorEl.style.display = 'block';
+      }
+    }
+  }
+
+  async function loadStats() {
+    try {
+      const res = await fetch('/health');
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('statModels').textContent = data.model_count || 3;
+        document.getElementById('statFeatures').textContent = data.feature_count || '--';
+        document.getElementById('statPipelineFeatures').textContent = data.feature_count || '--';
+      }
+    } catch(e) {}
+    try {
+      const res = await fetch('/api/states');
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('statStates').textContent = data.count || 20;
+      }
+    } catch(e) {}
+    try {
+      const res = await fetch('/api/cities?state=Maharashtra');
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('statCities').textContent = data.count || 42;
+      }
+    } catch(e) {}
+  }
+
+  loadComparison();
+  loadStats();
+</script>
+{% endblock %}
