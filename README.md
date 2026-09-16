@@ -139,6 +139,25 @@ For context, an R² of 0.996 means the model explains 99.6% of the variation in 
 
 ---
 
+## Dataset Statistics
+
+Here's what the model was trained on:
+
+| Metric | Value |
+|--------|-------|
+| Total records | 248,543 |
+| States covered | 20 |
+| Cities covered | 42 |
+| Final features | 106 |
+| Training set | 173,979 (70%) |
+| Validation set | 24,855 (10%) |
+| Test set | 49,709 (20%) |
+| Target variable | Price_in_Lakhs |
+
+The dataset covers residential properties across India, from metro cities like Mumbai and Delhi to smaller cities like Guwahati and Bhopal. Each record includes property details like size, number of bedrooms, location, amenities, and the actual sale price (in Lakhs of Indian Rupees).
+
+---
+
 ## What the System Checks
 
 Before making a prediction, it validates all 18 input fields:
